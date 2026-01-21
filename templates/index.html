@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vikingos - Pedido Guerrero</title>
+    <style>
+        :root { --orange: #f39200; --red: #e60000; --bg: #0d0d0d; --card: #1a1a1a; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; }
+        
+        header { background: #000; padding: 20px; text-align: center; border-bottom: 3px solid var(--orange); }
+        .container { max-width: 900px; margin: auto; padding: 15px; }
+        /* Banner de Promoción más Suave */
+        #promo-banner { 
+            display: none; 
+            background: linear-gradient(135deg, #2c0000 0%, #1a1a1a 100%); /* Fondo vino oscuro y carbón */
+            color: white; 
+            padding: 20px; 
+            border-radius: 12px; 
+            text-align: center; 
+            margin-bottom: 20px; 
+            border: 1px solid var(--orange); /* Borde naranja sutil */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .btn-promo {
+            background: var(--orange); /* Botón naranja vikingo */
+            color: black; 
+            border: none; 
+            padding: 12px 25px; 
+            border-radius: 8px; 
+            font-weight: bold; 
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .btn-promo:hover {
+            background: #ffae33;
+            transform: scale(1.02);
+        }
+
+        /* Acordeón */
+        .category-btn { width: 100%; background: var(--card); border: none; color: white; padding: 18px; margin-top: 10px; border-radius: 10px; text-align: left; font-size: 1.1em; cursor: pointer; display: flex; justify-content: space-between; border-left: 5px solid var(--orange); }
+        .category-content { display: none; padding: 15px; background: #111; border-radius: 0 0 10px 10px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+        .active-content { display: grid; }
+
+        /* Productos */
+        .product-card { background: #222; padding: 15px; border-radius: 12px; border: 1px solid #333; display: flex; flex-direction: column; gap: 8px; }
+        .product-desc { font-size: 0.85em; color: #aaa; margin: 4px 0; font-style: italic; }
+        .opt-label { font-size: 0.75em; color: var(--orange); text-transform: uppercase; font-weight: bold; margin-top: 5px; }
+        
+        select, input, textarea { background: #333; color: white; border: 1px solid #444; padding: 10px; border-radius: 6px; width: 100%; box-sizing: border-box; }
+        .btn-add { background: var(--orange); color: black; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+
+        /* Carrito */
+        #cart-panel { position: fixed; right: -100%; top: 0; width: 100%; max-width: 450px; height: 100vh; background: #121212; z-index: 1000; transition: 0.5s; padding: 25px; box-sizing: border-box; overflow-y: auto; box-shadow: -10px 0 20px rgba(0,0,0,0.8); }
+        #cart-panel.open { right: 0; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; z-index: 999; }
+        .overlay.active { display: block; }
+
+        .time-chips { display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap; }
+        .chip { background: #333; padding: 8px 12px; border-radius: 20px; font-size: 0.8em; cursor: pointer; border: 1px solid var(--orange); }
+        .chip:hover { background: var(--orange); color: black; }
+
+        .map-container { margin-top: 15px; border-radius: 10px; overflow: hidden; border: 1px solid #444; }
+        .float-cart { position: fixed; bottom: 20px; right: 20px; background: var(--orange); color: black; padding: 15px 25px; border-radius: 50px; border: none; font-weight: bold; cursor: pointer; z-index: 900; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+
+<header>
+       <h1 style="margin:0; color: var(--orange);">⚔️ TAQUERÍA VIKINGOS ⚔️</h1>
+    <p style="opacity: 0.6; font-size: 0.9em;">Ordena rápido, come como Guerrero</p>
+</header>
+
+<div class="container">
+    <div id="promo-banner">
+        <h2 style="margin:0; color: var(--orange);">🔥 PROMO ESPECIAL 🔥</h2>
+        <p style="margin:8px 0 15px 0; font-size: 1.1em;"><b>Tacos al Pastor normales al 2x1</b></p>
+        <button class="btn-promo" onclick="addToCart('Taco al Pastor (Promo 2x1)', 20)">
+            AGREGAR PROMO
+        </button>
+        <small style="display:block; margin-top:10px; opacity: 0.7;">Disponible Miércoles y Domingos</small>
+    </div>
+
+    <div id="menu-container"></div>
+</div>
+
+<div class="overlay" onclick="toggleCart()"></div>
+
+<div id="cart-panel">
+    <div style="display:flex; justify-content: space-between; align-items: center;">
+        <h2>🛒 Mi Orden</h2>
+        <button onclick="toggleCart()" style="background:none; border:none; color:white; font-size: 2em; cursor:pointer;">✕</button>
+    </div>
+    
+    <div id="cart-items" style="margin-top: 20px;"></div>
+    
+    <div style="border-top: 2px solid var(--orange); padding-top: 20px; margin-top: 25px;">
+        <h3 style="display:flex; justify-content:space-between">Total: <span id="total-val">$0</span></h3>
+        
+        <label>¿Cómo recibes?</label>
+        <select id="del-type" onchange="updateUI()">
+            <option value="Tienda">Recoger en Tienda</option>
+            <option value="Domicilio">Envío a Domicilio</option>
+        </select>
+
+        <div id="shop-info" style="display:block; padding: 15px; background: #1a1a1a; margin: 15px 0; border-radius: 10px;">
+            <span style="color: var(--orange);">📍 Ubicación:</span><br>
+            Av. Morelos #19, Chiautla, Edo. Méx.
+            <div class="map-container">
+                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3759.7451250205017!2d-98.88489779999999!3d19.552553!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x85d1e88f18182937%3A0xb59360bd9fe852a1!2sTaqueria%20Los%20Vikingo's!5e0!3m2!1ses-419!2smx!4v1768947524698!5m2!1ses-419!2smx" width="100%" height="200" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+            </div>
+            
+            <label style="margin-top:15px; display:block;">🕒 Hora de recogida:</label>
+            <div class="time-chips">
+                <div class="chip" onclick="setTime(15)">+15 min</div>
+                <div class="chip" onclick="setTime(30)">+30 min</div>
+                <div class="chip" onclick="setTime(45)">+45 min</div>
+            </div>
+            <input type="time" id="pickup-time">
+        </div>
+
+        <div id="delivery-info" style="display:none; padding: 15px; background: #1a1a1a; margin: 15px 0; border-radius: 10px;">
+            <button onclick="getGPS()" style="width:100%; background:#444; color:white; padding:10px; border:none; border-radius:5px; cursor:pointer; margin-bottom:10px;">📍 Enviar GPS Actual</button>
+            <textarea id="manual-address" placeholder="Dirección exacta y referencias..."></textarea>
+            <p id="gps-status" style="font-size: 0.8em; color: var(--orange); display:none;">✅ GPS Listo</p>
+        </div>
+
+        <label style="margin-top:10px; display:block;">Método de Pago:</label>
+        <select id="pay-method" onchange="updateUI()">
+            <option value="Efectivo">Efectivo</option>
+            <option value="Tarjeta">Tarjeta (Terminal)</option>
+        </select>
+
+        <div id="cash-box">
+            <input type="number" id="cash-amt" placeholder="¿Con cuánto pagas?" oninput="calcChange()" style="margin-top:10px;">
+            <p id="change-txt" style="color:var(--orange); font-weight:bold;">Cambio: $0</p>
+        </div>
+
+        <button onclick="sendOrder()" style="width:100%; background: #25d366; color: white; padding: 18px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 15px; font-size: 1.1em;">PEDIR POR WHATSAPP</button>
+    </div>
+</div>
+
+<button class="float-cart" onclick="toggleCart()">🛒 Carrito (<span id="cart-count">0</span>)</button>
+
+<script>
+    let cart = {};
+    let total = 0;
+    let gps = "";
+
+    async function loadMenu() {
+        const res = await fetch('/api/menu');
+        const data = await res.json();
+        const container = document.getElementById('menu-container');
+        for (const [cat, items] of Object.entries(data)) {
+            let id = `cat-${cat.replace(/\s/g, '')}`;
+            container.innerHTML += `<button class="category-btn" onclick="toggleCategory('${id}')">${cat} <span>▼</span></button>`;
+            let html = `<div class="category-content" id="${id}">`;
+            items.forEach((item, idx) => {
+                let opts = '';
+                if (item.opciones_carne) {
+                    opts += `<div class="opt-label">Tipo de carne:</div><select id="carne-${id}-${idx}">${item.opciones_carne.map(o => `<option>${o}</option>`).join('')}</select>`;
+                }
+                if (item.salsa) {
+                    opts += `<div class="opt-label">Salsa:</div><select id="salsa-${id}-${idx}">${item.salsa.map(o => `<option>${o}</option>`).join('')}</select>`;
+                }
+                if (item.verdura) {
+                    opts += `<div class="opt-label">Verdura:</div><select id="verdura-${id}-${idx}">${item.verdura.map(o => `<option>${o}</option>`).join('')}</select>`;
+                }
+                let extraOpts = item.variantes || item.opciones;
+                if (extraOpts) {
+                    opts += `<div class="opt-label">Elegir opción:</div><select id="extra-${id}-${idx}">${extraOpts.map(o => `<option>${o}</option>`).join('')}</select>`;
+                }
+                html += `<div class="product-card"><div><b>${item.n}</b><p class="product-desc">${item.descripcion || ''}</p><span style="color:var(--orange)">$${item.p}</span></div>${opts}<button class="btn-add" onclick="addToCart('${item.n}', ${item.p}, 'carne-${id}-${idx}', 'salsa-${id}-${idx}', 'verdura-${id}-${idx}', 'extra-${id}-${idx}')">AGREGAR</button></div>`;
+            });
+            container.innerHTML += html + `</div>`;
+        }
+    }
+
+    function setTime(minutes) {
+        let now = new Date();
+        now.setMinutes(now.getMinutes() + minutes);
+        let hours = String(now.getHours()).padStart(2, '0');
+        let mins = String(now.getMinutes()).padStart(2, '0');
+        document.getElementById('pickup-time').value = `${hours}:${mins}`;
+    }
+
+    function toggleCategory(id) { document.getElementById(id).classList.toggle('active-content'); }
+    function toggleCart() { document.getElementById('cart-panel').classList.toggle('open'); document.querySelector('.overlay').classList.toggle('active'); }
+
+    function addToCart(name, price, carneId = null, salsaId = null, verduraId = null, extraId = null) {
+        let parts = [];
+        if (carneId && document.getElementById(carneId)) parts.push(document.getElementById(carneId).value);
+        if (extraId && document.getElementById(extraId)) parts.push(document.getElementById(extraId).value);
+        if (salsaId && document.getElementById(salsaId)) parts.push(document.getElementById(salsaId).value);
+        if (verduraId && document.getElementById(verduraId)) parts.push(document.getElementById(verduraId).value);
+        let full = parts.length > 0 ? `${name} (${parts.join(', ')})` : name;
+        if (!cart[full]) cart[full] = { price, qty: 0 };
+        cart[full].qty++;
+        if (Object.keys(cart).length === 1 && cart[full].qty === 1) toggleCart();
+        renderCart();
+    }
+
+    function updateQty(name, val) {
+        cart[name].qty += val;
+        if (cart[name].qty <= 0) delete cart[name];
+        renderCart();
+    }
+
+    function renderCart() {
+        const list = document.getElementById('cart-items');
+        list.innerHTML = ""; total = 0; let count = 0;
+        for (const [n, d] of Object.entries(cart)) {
+            total += (d.price * d.qty); count += d.qty;
+            list.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:12px; margin-bottom:8px; border-radius:8px;"><div><b>${n}</b><br><small>$${d.price * d.qty}</small></div><div style="display:flex; gap:10px; align-items:center;"><button style="background:#444; border:none; color:white; width:25px; height:25px; border-radius:5px; cursor:pointer;" onclick="updateQty('${n}', -1)">-</button><span>${d.qty}</span><button style="background:#444; border:none; color:white; width:25px; height:25px; border-radius:5px; cursor:pointer;" onclick="updateQty('${n}', 1)">+</button></div></div>`;
+        }
+        document.getElementById('total-val').innerText = `$${total}`;
+        document.getElementById('cart-count').innerText = count;
+        calcChange();
+    }
+
+    function getGPS() {
+        navigator.geolocation.getCurrentPosition(p => {
+            gps = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`;
+            document.getElementById('gps-status').style.display = 'block';
+        });
+    }
+
+    function updateUI() {
+        const isStore = document.getElementById('del-type').value === 'Tienda';
+        const isCash = document.getElementById('pay-method').value === 'Efectivo';
+        document.getElementById('shop-info').style.display = isStore ? 'block' : 'none';
+        document.getElementById('delivery-info').style.display = isStore ? 'none' : 'block';
+        document.getElementById('cash-box').style.display = isCash ? 'block' : 'none';
+    }
+
+    function calcChange() {
+        const pay = document.getElementById('cash-amt').value || 0;
+        document.getElementById('change-txt').innerText = `Cambio: $${Math.max(0, pay - total)}`;
+    }
+
+    function sendOrder() {
+        if (total === 0) return alert("Carrito vacío");
+        const type = document.getElementById('del-type').value;
+        const time = document.getElementById('pickup-time').value;
+        let msg = `⚔️ *ORDEN VIKINGA* ⚔️\n\n`;
+        for (const [n, d] of Object.entries(cart)) {
+            let line = `• ${d.qty}x ${n} ($${d.price * d.qty})`;
+            if (n.toLowerCase().includes("agua fresca")) line += ` _(¿Qué sabores de agua tienen hoy?)_`;
+            msg += line + `\n`;
+        }
+        msg += `\n💰 *TOTAL:* $${total}\n💳 *PAGO:* ${document.getElementById('pay-method').value}\n📦 *ENTREGA:* ${type}`;
+        if (type === 'Tienda') msg += `\n⏰ *HORA RECOGIDA:* ${time || 'Ahora mismo'}\n📍 Recojo en: Av. Morelos #19, Chiautla.`;
+        else msg += `\n🏠 *DIRECCIÓN:* ${document.getElementById('manual-address').value}\n📍 *GPS:* ${gps || 'No enviado'}`;
+        window.open(`https://wa.me/5542683727?text=${encodeURIComponent(msg)}`);
+    }
+
+    function verificarPromocion() {
+        const ahora = new Date();
+        const diaSemana = ahora.getDay(); 
+        if (diaSemana === 0 || diaSemana === 3) {
+            document.getElementById('promo-banner').style.display = 'block';
+        }
+    }
+
+    window.onload = () => {
+        loadMenu();
+        verificarPromocion();
+    };
+</script>
+</body>
+</html>
